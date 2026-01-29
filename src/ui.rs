@@ -1,21 +1,21 @@
 use ratatui::{
+    Frame,
     layout::{Alignment, Constraint, Direction, Layout, Rect},
     style::{Color, Modifier, Style},
     text::{Line, Span},
     widgets::{Block, Borders, Clear, Gauge, Paragraph},
-    Frame,
 };
 
 use crate::app::{App, Screen};
 use crate::timer::TimerPhase;
 
 // Color palette
-const PRIMARY: Color = Color::Rgb(255, 107, 107);    // #FF6B6B - Tomato red
-const SECONDARY: Color = Color::Rgb(78, 205, 196);   // #4ECDC4 - Turquoise
-const ACCENT: Color = Color::Rgb(255, 230, 109);     // #FFE66D - Yellow
-const WORK_COLOR: Color = Color::Rgb(249, 115, 22);  // #F97316 - Orange
+const PRIMARY: Color = Color::Rgb(255, 107, 107); // #FF6B6B - Tomato red
+const SECONDARY: Color = Color::Rgb(78, 205, 196); // #4ECDC4 - Turquoise
+const ACCENT: Color = Color::Rgb(255, 230, 109); // #FFE66D - Yellow
+const WORK_COLOR: Color = Color::Rgb(249, 115, 22); // #F97316 - Orange
 const BREAK_COLOR: Color = Color::Rgb(34, 197, 94); // #22C55E - Green
-const BG_DARK: Color = Color::Rgb(30, 30, 46);       // #1E1E2E - Dark
+const BG_DARK: Color = Color::Rgb(30, 30, 46); // #1E1E2E - Dark
 
 pub fn draw(frame: &mut Frame, app: &App) {
     let area = frame.area();
@@ -45,9 +45,10 @@ fn draw_mode_selection(frame: &mut Frame, app: &App, area: Rect) {
 
     // Title
     let title = Paragraph::new(vec![
-        Line::from(vec![
-            Span::styled("  POMODORO  ", Style::default().fg(PRIMARY).add_modifier(Modifier::BOLD)),
-        ]),
+        Line::from(vec![Span::styled(
+            "  POMODORO  ",
+            Style::default().fg(PRIMARY).add_modifier(Modifier::BOLD),
+        )]),
         Line::from(""),
         Line::from(Span::styled(
             "Select a mode",
@@ -140,7 +141,9 @@ fn draw_timer(frame: &mut Frame, app: &App, area: Rect) {
         )),
         Line::from(Span::styled(
             timer.phase.name(),
-            Style::default().fg(phase_color).add_modifier(Modifier::BOLD),
+            Style::default()
+                .fg(phase_color)
+                .add_modifier(Modifier::BOLD),
         )),
     ])
     .alignment(Alignment::Center);
@@ -150,7 +153,9 @@ fn draw_timer(frame: &mut Frame, app: &App, area: Rect) {
     if timer.paused {
         let paused = Paragraph::new(Span::styled(
             " PAUSED ",
-            Style::default().fg(ACCENT).add_modifier(Modifier::SLOW_BLINK),
+            Style::default()
+                .fg(ACCENT)
+                .add_modifier(Modifier::SLOW_BLINK),
         ))
         .alignment(Alignment::Center);
         frame.render_widget(paused, chunks[1]);
@@ -184,12 +189,18 @@ fn draw_timer(frame: &mut Frame, app: &App, area: Rect) {
 
     // Progress bar
     let gauge = Gauge::default()
-        .block(Block::default().borders(Borders::ALL).border_style(Style::default().fg(Color::DarkGray)))
+        .block(
+            Block::default()
+                .borders(Borders::ALL)
+                .border_style(Style::default().fg(Color::DarkGray)),
+        )
         .gauge_style(Style::default().fg(phase_color).bg(Color::DarkGray))
         .percent((timer.progress() * 100.0) as u16)
         .label(Span::styled(
             format!("{:.0}%", timer.progress() * 100.0),
-            Style::default().fg(Color::White).add_modifier(Modifier::BOLD),
+            Style::default()
+                .fg(Color::White)
+                .add_modifier(Modifier::BOLD),
         ));
 
     let gauge_area = centered_rect(60, 3, chunks[3]);
@@ -199,7 +210,10 @@ fn draw_timer(frame: &mut Frame, app: &App, area: Rect) {
     if app.show_completion_message {
         let msg = Paragraph::new(Span::styled(
             " Pomodoro completed! ",
-            Style::default().fg(BG_DARK).bg(BREAK_COLOR).add_modifier(Modifier::BOLD),
+            Style::default()
+                .fg(BG_DARK)
+                .bg(BREAK_COLOR)
+                .add_modifier(Modifier::BOLD),
         ))
         .alignment(Alignment::Center);
         frame.render_widget(msg, chunks[4]);
