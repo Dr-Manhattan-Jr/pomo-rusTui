@@ -34,10 +34,10 @@ impl Analytics {
     }
 
     pub fn save(&self) {
-        if let Some(path) = Self::data_path() {
-            if let Ok(content) = serde_json::to_string_pretty(self) {
-                let _ = fs::write(&path, content);
-            }
+        if let Some(path) = Self::data_path()
+            && let Ok(content) = serde_json::to_string_pretty(self)
+        {
+            let _ = fs::write(&path, content);
         }
     }
 
@@ -69,7 +69,8 @@ impl Analytics {
     pub fn week_count(&self) -> usize {
         let now = Local::now();
         let today = now.date_naive();
-        let week_start = today - chrono::Duration::days(today.weekday().num_days_from_monday() as i64);
+        let week_start =
+            today - chrono::Duration::days(today.weekday().num_days_from_monday() as i64);
 
         self.records
             .iter()
@@ -97,12 +98,20 @@ impl Analytics {
         let yesterday = today - chrono::Duration::days(1);
 
         // Check if there's activity today or yesterday
-        if dates.last().map(|&d| d != today && d != yesterday).unwrap_or(true) {
+        if dates
+            .last()
+            .map(|&d| d != today && d != yesterday)
+            .unwrap_or(true)
+        {
             return 0;
         }
 
         let mut streak = 0;
-        let mut current_date = if dates.contains(&today) { today } else { yesterday };
+        let mut current_date = if dates.contains(&today) {
+            today
+        } else {
+            yesterday
+        };
 
         for date in dates.iter().rev() {
             if *date == current_date {
@@ -248,7 +257,8 @@ mod tests {
         let yesterday = Local::now() - chrono::Duration::days(1);
 
         analytics.add_record_with_timestamp(yesterday, PomodoroMode::Short);
-        analytics.add_record_with_timestamp(yesterday - chrono::Duration::days(1), PomodoroMode::Short);
+        analytics
+            .add_record_with_timestamp(yesterday - chrono::Duration::days(1), PomodoroMode::Short);
 
         assert_eq!(analytics.current_streak(), 2);
     }
@@ -273,7 +283,8 @@ mod tests {
         analytics.add_record_with_timestamp(today - chrono::Duration::days(1), PomodoroMode::Short);
 
         // Add record from last week
-        analytics.add_record_with_timestamp(today - chrono::Duration::days(10), PomodoroMode::Short);
+        analytics
+            .add_record_with_timestamp(today - chrono::Duration::days(10), PomodoroMode::Short);
 
         assert!(analytics.week_count() >= 2);
     }

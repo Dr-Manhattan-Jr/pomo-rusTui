@@ -9,9 +9,9 @@ use std::time::Duration;
 use crossterm::{
     event::{self, DisableMouseCapture, EnableMouseCapture, Event},
     execute,
-    terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
+    terminal::{EnterAlternateScreen, LeaveAlternateScreen, disable_raw_mode, enable_raw_mode},
 };
-use ratatui::{backend::CrosstermBackend, Terminal};
+use ratatui::{Terminal, backend::CrosstermBackend};
 
 use app::App;
 
@@ -54,10 +54,10 @@ async fn run_app(
         terminal.draw(|f| ui::draw(f, app))?;
 
         // Poll for events with timeout
-        if event::poll(tick_rate)? {
-            if let Event::Key(key) = event::read()? {
-                app.handle_key(key);
-            }
+        if event::poll(tick_rate)?
+            && let Event::Key(key) = event::read()?
+        {
+            app.handle_key(key);
         }
 
         // Update timer
