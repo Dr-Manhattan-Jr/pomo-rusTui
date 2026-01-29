@@ -2,6 +2,17 @@
 
 A terminal-based Pomodoro timer written in Rust using ratatui.
 
+## Screenshots
+
+### Mode Selection
+![Mode Selection](img/1.png)
+
+### Timer
+![Timer](img/3.png)
+
+### Analytics
+![Analytics](img/2.png)
+
 ## Features
 
 - Two pomodoro modes:
