@@ -54,10 +54,10 @@ async fn run_app(
         terminal.draw(|f| ui::draw(f, app))?;
 
         // Poll for events with timeout
-        if event::poll(tick_rate)? {
-            if let Event::Key(key) = event::read()? {
-                app.handle_key(key);
-            }
+        if event::poll(tick_rate)?
+            && let Event::Key(key) = event::read()?
+        {
+            app.handle_key(key);
         }
 
         // Update timer

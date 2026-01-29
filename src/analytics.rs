@@ -34,10 +34,10 @@ impl Analytics {
     }
 
     pub fn save(&self) {
-        if let Some(path) = Self::data_path() {
-            if let Ok(content) = serde_json::to_string_pretty(self) {
-                let _ = fs::write(&path, content);
-            }
+        if let Some(path) = Self::data_path()
+            && let Ok(content) = serde_json::to_string_pretty(self)
+        {
+            let _ = fs::write(&path, content);
         }
     }
 
