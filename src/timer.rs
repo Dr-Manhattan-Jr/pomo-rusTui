@@ -145,14 +145,26 @@ mod tests {
 
     #[test]
     fn test_short_mode_durations() {
-        assert_eq!(PomodoroMode::Short.work_duration(), Duration::from_secs(25 * 60));
-        assert_eq!(PomodoroMode::Short.break_duration(), Duration::from_secs(5 * 60));
+        assert_eq!(
+            PomodoroMode::Short.work_duration(),
+            Duration::from_secs(25 * 60)
+        );
+        assert_eq!(
+            PomodoroMode::Short.break_duration(),
+            Duration::from_secs(5 * 60)
+        );
     }
 
     #[test]
     fn test_long_mode_durations() {
-        assert_eq!(PomodoroMode::Long.work_duration(), Duration::from_secs(50 * 60));
-        assert_eq!(PomodoroMode::Long.break_duration(), Duration::from_secs(10 * 60));
+        assert_eq!(
+            PomodoroMode::Long.work_duration(),
+            Duration::from_secs(50 * 60)
+        );
+        assert_eq!(
+            PomodoroMode::Long.break_duration(),
+            Duration::from_secs(10 * 60)
+        );
     }
 
     #[test]
