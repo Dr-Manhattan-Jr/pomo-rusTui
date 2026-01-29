@@ -138,3 +138,170 @@ impl Timer {
         format!("{:02}:{:02}", minutes, seconds)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_short_mode_durations() {
+        assert_eq!(PomodoroMode::Short.work_duration(), Duration::from_secs(25 * 60));
+        assert_eq!(PomodoroMode::Short.break_duration(), Duration::from_secs(5 * 60));
+    }
+
+    #[test]
+    fn test_long_mode_durations() {
+        assert_eq!(PomodoroMode::Long.work_duration(), Duration::from_secs(50 * 60));
+        assert_eq!(PomodoroMode::Long.break_duration(), Duration::from_secs(10 * 60));
+    }
+
+    #[test]
+    fn test_mode_names() {
+        assert_eq!(PomodoroMode::Short.name(), "Short (25/5)");
+        assert_eq!(PomodoroMode::Long.name(), "Long (50/10)");
+    }
+
+    #[test]
+    fn test_phase_names() {
+        assert_eq!(TimerPhase::Work.name(), "Work");
+        assert_eq!(TimerPhase::Break.name(), "Break");
+    }
+
+    #[test]
+    fn test_timer_new() {
+        let timer = Timer::new(PomodoroMode::Short);
+        assert_eq!(timer.mode, PomodoroMode::Short);
+        assert_eq!(timer.phase, TimerPhase::Work);
+        assert_eq!(timer.remaining, Duration::from_secs(25 * 60));
+        assert!(!timer.paused);
+    }
+
+    #[test]
+    fn test_toggle_pause() {
+        let mut timer = Timer::new(PomodoroMode::Short);
+        assert!(!timer.paused);
+
+        timer.toggle_pause();
+        assert!(timer.paused);
+
+        timer.toggle_pause();
+        assert!(!timer.paused);
+    }
+
+    #[test]
+    fn test_reset_work_phase() {
+        let mut timer = Timer::new(PomodoroMode::Short);
+        timer.remaining = Duration::from_secs(100);
+        timer.paused = true;
+
+        timer.reset();
+
+        assert_eq!(timer.remaining, Duration::from_secs(25 * 60));
+        assert!(!timer.paused);
+    }
+
+    #[test]
+    fn test_reset_break_phase() {
+        let mut timer = Timer::new(PomodoroMode::Short);
+        timer.start_break();
+        timer.remaining = Duration::from_secs(100);
+
+        timer.reset();
+
+        assert_eq!(timer.remaining, Duration::from_secs(5 * 60));
+    }
+
+    #[test]
+    fn test_start_break() {
+        let mut timer = Timer::new(PomodoroMode::Short);
+        timer.start_break();
+
+        assert_eq!(timer.phase, TimerPhase::Break);
+        assert_eq!(timer.remaining, Duration::from_secs(5 * 60));
+    }
+
+    #[test]
+    fn test_start_work() {
+        let mut timer = Timer::new(PomodoroMode::Long);
+        timer.start_break();
+        timer.start_work();
+
+        assert_eq!(timer.phase, TimerPhase::Work);
+        assert_eq!(timer.remaining, Duration::from_secs(50 * 60));
+    }
+
+    #[test]
+    fn test_skip_phase_from_work() {
+        let mut timer = Timer::new(PomodoroMode::Short);
+        let was_work = timer.skip_phase();
+
+        assert!(was_work);
+        assert_eq!(timer.phase, TimerPhase::Break);
+    }
+
+    #[test]
+    fn test_skip_phase_from_break() {
+        let mut timer = Timer::new(PomodoroMode::Short);
+        timer.start_break();
+        let was_work = timer.skip_phase();
+
+        assert!(!was_work);
+        assert_eq!(timer.phase, TimerPhase::Work);
+    }
+
+    #[test]
+    fn test_progress_at_start() {
+        let timer = Timer::new(PomodoroMode::Short);
+        assert!((timer.progress() - 0.0).abs() < 0.001);
+    }
+
+    #[test]
+    fn test_progress_halfway() {
+        let mut timer = Timer::new(PomodoroMode::Short);
+        timer.remaining = Duration::from_secs(12 * 60 + 30); // Half of 25 min
+        assert!((timer.progress() - 0.5).abs() < 0.01);
+    }
+
+    #[test]
+    fn test_progress_at_end() {
+        let mut timer = Timer::new(PomodoroMode::Short);
+        timer.remaining = Duration::ZERO;
+        assert!((timer.progress() - 1.0).abs() < 0.001);
+    }
+
+    #[test]
+    fn test_format_remaining() {
+        let mut timer = Timer::new(PomodoroMode::Short);
+        assert_eq!(timer.format_remaining(), "25:00");
+
+        timer.remaining = Duration::from_secs(5 * 60 + 30);
+        assert_eq!(timer.format_remaining(), "05:30");
+
+        timer.remaining = Duration::from_secs(59);
+        assert_eq!(timer.format_remaining(), "00:59");
+    }
+
+    #[test]
+    fn test_tick_when_paused() {
+        let mut timer = Timer::new(PomodoroMode::Short);
+        timer.paused = true;
+        let original = timer.remaining;
+
+        let completed = timer.tick();
+
+        assert!(!completed);
+        assert_eq!(timer.remaining, original);
+    }
+
+    #[test]
+    fn test_tick_completes_phase() {
+        let mut timer = Timer::new(PomodoroMode::Short);
+        timer.remaining = Duration::from_millis(1);
+
+        std::thread::sleep(Duration::from_millis(10));
+        let completed = timer.tick();
+
+        assert!(completed);
+        assert_eq!(timer.remaining, Duration::ZERO);
+    }
+}

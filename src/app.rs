@@ -147,4 +147,240 @@ impl App {
             }
         }
     }
+
+    #[cfg(test)]
+    pub fn new_for_test() -> Self {
+        Self {
+            screen: Screen::ModeSelection,
+            running: true,
+            selected_mode: 0,
+            timer: None,
+            analytics: Analytics::default(),
+            show_completion_message: false,
+            show_exit_confirm: false,
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crossterm::event::KeyModifiers;
+
+    fn key(code: KeyCode) -> KeyEvent {
+        KeyEvent::new(code, KeyModifiers::NONE)
+    }
+
+    #[test]
+    fn test_initial_state() {
+        let app = App::new_for_test();
+        assert_eq!(app.screen, Screen::ModeSelection);
+        assert!(app.running);
+        assert_eq!(app.selected_mode, 0);
+        assert!(app.timer.is_none());
+    }
+
+    // Mode Selection tests
+    #[test]
+    fn test_mode_selection_navigate_down() {
+        let mut app = App::new_for_test();
+        app.handle_key(key(KeyCode::Char('j')));
+        assert_eq!(app.selected_mode, 1);
+
+        app.handle_key(key(KeyCode::Char('j')));
+        assert_eq!(app.selected_mode, 0); // Wraps around
+    }
+
+    #[test]
+    fn test_mode_selection_navigate_up() {
+        let mut app = App::new_for_test();
+        app.handle_key(key(KeyCode::Char('k')));
+        assert_eq!(app.selected_mode, 1); // Wraps to bottom
+
+        app.handle_key(key(KeyCode::Char('k')));
+        assert_eq!(app.selected_mode, 0);
+    }
+
+    #[test]
+    fn test_mode_selection_arrow_keys() {
+        let mut app = App::new_for_test();
+        app.handle_key(key(KeyCode::Down));
+        assert_eq!(app.selected_mode, 1);
+
+        app.handle_key(key(KeyCode::Up));
+        assert_eq!(app.selected_mode, 0);
+    }
+
+    #[test]
+    fn test_mode_selection_start_short() {
+        let mut app = App::new_for_test();
+        app.selected_mode = 0;
+        app.handle_key(key(KeyCode::Enter));
+
+        assert_eq!(app.screen, Screen::Timer);
+        assert!(app.timer.is_some());
+        assert_eq!(app.timer.as_ref().unwrap().mode, PomodoroMode::Short);
+    }
+
+    #[test]
+    fn test_mode_selection_start_long() {
+        let mut app = App::new_for_test();
+        app.selected_mode = 1;
+        app.handle_key(key(KeyCode::Enter));
+
+        assert_eq!(app.screen, Screen::Timer);
+        assert!(app.timer.is_some());
+        assert_eq!(app.timer.as_ref().unwrap().mode, PomodoroMode::Long);
+    }
+
+    #[test]
+    fn test_mode_selection_go_to_analytics() {
+        let mut app = App::new_for_test();
+        app.handle_key(key(KeyCode::Char('a')));
+
+        assert_eq!(app.screen, Screen::Analytics);
+    }
+
+    #[test]
+    fn test_mode_selection_quit() {
+        let mut app = App::new_for_test();
+        app.handle_key(key(KeyCode::Char('q')));
+
+        assert!(!app.running);
+    }
+
+    // Timer tests
+    #[test]
+    fn test_timer_pause() {
+        let mut app = App::new_for_test();
+        app.timer = Some(Timer::new(PomodoroMode::Short));
+        app.screen = Screen::Timer;
+
+        assert!(!app.timer.as_ref().unwrap().paused);
+        app.handle_key(key(KeyCode::Char(' ')));
+        assert!(app.timer.as_ref().unwrap().paused);
+    }
+
+    #[test]
+    fn test_timer_reset() {
+        let mut app = App::new_for_test();
+        app.timer = Some(Timer::new(PomodoroMode::Short));
+        app.screen = Screen::Timer;
+
+        app.timer.as_mut().unwrap().remaining = std::time::Duration::from_secs(100);
+        app.handle_key(key(KeyCode::Char('r')));
+
+        assert_eq!(
+            app.timer.as_ref().unwrap().remaining,
+            std::time::Duration::from_secs(25 * 60)
+        );
+    }
+
+    #[test]
+    fn test_timer_skip_work_to_break() {
+        let mut app = App::new_for_test();
+        app.timer = Some(Timer::new(PomodoroMode::Short));
+        app.screen = Screen::Timer;
+
+        app.handle_key(key(KeyCode::Char('s')));
+
+        assert_eq!(app.timer.as_ref().unwrap().phase, TimerPhase::Break);
+        assert!(app.show_completion_message);
+    }
+
+    #[test]
+    fn test_timer_skip_break_to_work() {
+        let mut app = App::new_for_test();
+        app.timer = Some(Timer::new(PomodoroMode::Short));
+        app.timer.as_mut().unwrap().start_break();
+        app.screen = Screen::Timer;
+
+        app.handle_key(key(KeyCode::Char('s')));
+
+        assert_eq!(app.timer.as_ref().unwrap().phase, TimerPhase::Work);
+        assert!(!app.show_completion_message);
+    }
+
+    #[test]
+    fn test_timer_exit_shows_confirm() {
+        let mut app = App::new_for_test();
+        app.timer = Some(Timer::new(PomodoroMode::Short));
+        app.screen = Screen::Timer;
+
+        app.handle_key(key(KeyCode::Char('m')));
+
+        assert!(app.show_exit_confirm);
+        assert!(app.timer.as_ref().unwrap().paused);
+        assert_eq!(app.screen, Screen::Timer); // Still on timer screen
+    }
+
+    #[test]
+    fn test_timer_exit_confirm_yes() {
+        let mut app = App::new_for_test();
+        app.timer = Some(Timer::new(PomodoroMode::Short));
+        app.screen = Screen::Timer;
+        app.show_exit_confirm = true;
+
+        app.handle_key(key(KeyCode::Char('y')));
+
+        assert!(!app.show_exit_confirm);
+        assert!(app.timer.is_none());
+        assert_eq!(app.screen, Screen::ModeSelection);
+    }
+
+    #[test]
+    fn test_timer_exit_confirm_no() {
+        let mut app = App::new_for_test();
+        app.timer = Some(Timer::new(PomodoroMode::Short));
+        app.screen = Screen::Timer;
+        app.show_exit_confirm = true;
+
+        app.handle_key(key(KeyCode::Char('n')));
+
+        assert!(!app.show_exit_confirm);
+        assert!(app.timer.is_some());
+        assert_eq!(app.screen, Screen::Timer);
+    }
+
+    #[test]
+    fn test_timer_quit() {
+        let mut app = App::new_for_test();
+        app.timer = Some(Timer::new(PomodoroMode::Short));
+        app.screen = Screen::Timer;
+
+        app.handle_key(key(KeyCode::Char('q')));
+
+        assert!(!app.running);
+    }
+
+    // Analytics tests
+    #[test]
+    fn test_analytics_back() {
+        let mut app = App::new_for_test();
+        app.screen = Screen::Analytics;
+
+        app.handle_key(key(KeyCode::Char('b')));
+
+        assert_eq!(app.screen, Screen::ModeSelection);
+    }
+
+    #[test]
+    fn test_analytics_back_esc() {
+        let mut app = App::new_for_test();
+        app.screen = Screen::Analytics;
+
+        app.handle_key(key(KeyCode::Esc));
+
+        assert_eq!(app.screen, Screen::ModeSelection);
+    }
+
+    #[test]
+    fn test_analytics_quit() {
+        let mut app = App::new_for_test();
+        app.screen = Screen::Analytics;
+
+        app.handle_key(key(KeyCode::Char('q')));
+
+        assert!(!app.running);
+    }
 }
