@@ -1,5 +1,8 @@
 # pomo-rusTui
 
+[![GitHub release](https://img.shields.io/github/v/release/Dr-Manhattan-Jr/pomo-rusTui)](https://github.com/Dr-Manhattan-Jr/pomo-rusTui/releases)
+[![CI](https://github.com/Dr-Manhattan-Jr/pomo-rusTui/actions/workflows/ci.yml/badge.svg)](https://github.com/Dr-Manhattan-Jr/pomo-rusTui/actions/workflows/ci.yml)
+
 A terminal-based Pomodoro timer written in Rust using ratatui.
 
 ## Screenshots
@@ -28,6 +31,14 @@ A terminal-based Pomodoro timer written in Rust using ratatui.
 
 ## Installation
 
+### Quick install (Linux/macOS)
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/Dr-Manhattan-Jr/pomo-rusTui/main/install.sh | bash
+```
+
+### From source
+
 ```bash
 git clone https://github.com/Dr-Manhattan-Jr/pomo-rusTui.git
 cd pomo-rusTui
@@ -35,6 +46,12 @@ cargo build --release
 ```
 
 The binary will be at `target/release/pomo-rusTui`.
+
+### Download binary
+
+Pre-built binaries are available on the [Releases](https://github.com/Dr-Manhattan-Jr/pomo-rusTui/releases) page for:
+- Linux (x86_64, aarch64)
+- macOS (x86_64, Apple Silicon)
 
 ## Usage
 
