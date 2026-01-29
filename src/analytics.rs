@@ -244,11 +244,9 @@ mod tests {
 
         // Today and yesterday
         analytics.add_record_with_timestamp(today, PomodoroMode::Short);
-        analytics
-            .add_record_with_timestamp(today - chrono::Duration::days(1), PomodoroMode::Short);
+        analytics.add_record_with_timestamp(today - chrono::Duration::days(1), PomodoroMode::Short);
         // Skip a day, then add one more
-        analytics
-            .add_record_with_timestamp(today - chrono::Duration::days(3), PomodoroMode::Short);
+        analytics.add_record_with_timestamp(today - chrono::Duration::days(3), PomodoroMode::Short);
 
         assert_eq!(analytics.current_streak(), 2);
     }
@@ -282,8 +280,7 @@ mod tests {
 
         // Add records for this week
         analytics.add_record_with_timestamp(today, PomodoroMode::Short);
-        analytics
-            .add_record_with_timestamp(today - chrono::Duration::days(1), PomodoroMode::Short);
+        analytics.add_record_with_timestamp(today - chrono::Duration::days(1), PomodoroMode::Short);
 
         // Add record from last week
         analytics
