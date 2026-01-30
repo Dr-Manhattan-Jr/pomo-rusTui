@@ -18,6 +18,7 @@ pub struct App {
     pub analytics: Analytics,
     pub show_completion_message: bool,
     pub show_exit_confirm: bool,
+    pub waiting_for_next_phase: bool,
 }
 
 impl App {
@@ -30,6 +31,7 @@ impl App {
             analytics: Analytics::load(),
             show_completion_message: false,
             show_exit_confirm: false,
+            waiting_for_next_phase: false,
         }
     }
 
@@ -83,6 +85,29 @@ impl App {
             return;
         }
 
+        // Handle waiting for next phase confirmation
+        if self.waiting_for_next_phase {
+            match key.code {
+                KeyCode::Enter | KeyCode::Char(' ') => {
+                    if let Some(timer) = &mut self.timer {
+                        match timer.phase {
+                            TimerPhase::Work => timer.start_break(),
+                            TimerPhase::Break => timer.start_work(),
+                        }
+                    }
+                    self.waiting_for_next_phase = false;
+                    self.show_completion_message = false;
+                }
+                KeyCode::Char('q') => self.running = false,
+                KeyCode::Char('m') | KeyCode::Esc => {
+                    self.waiting_for_next_phase = false;
+                    self.show_exit_confirm = true;
+                }
+                _ => {}
+            }
+            return;
+        }
+
         match key.code {
             KeyCode::Char('q') => self.running = false,
             KeyCode::Char(' ') => {
@@ -129,6 +154,10 @@ impl App {
     }
 
     pub fn tick(&mut self) {
+        if self.waiting_for_next_phase {
+            return;
+        }
+
         self.show_completion_message = false;
 
         if let Some(timer) = &mut self.timer {
@@ -138,12 +167,11 @@ impl App {
                     TimerPhase::Work => {
                         self.analytics.record_pomodoro(timer.mode);
                         self.show_completion_message = true;
-                        timer.start_break();
                     }
-                    TimerPhase::Break => {
-                        timer.start_work();
-                    }
+                    TimerPhase::Break => {}
                 }
+                timer.paused = true;
+                self.waiting_for_next_phase = true;
             }
         }
     }
@@ -158,6 +186,7 @@ impl App {
             analytics: Analytics::default(),
             show_completion_message: false,
             show_exit_confirm: false,
+            waiting_for_next_phase: false,
         }
     }
 }
