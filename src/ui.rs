@@ -206,8 +206,33 @@ fn draw_timer(frame: &mut Frame, app: &App, area: Rect) {
     let gauge_area = centered_rect(60, 3, chunks[3]);
     frame.render_widget(gauge, gauge_area);
 
-    // Completion message
-    if app.show_completion_message {
+    // Completion message and waiting prompt
+    if app.waiting_for_next_phase {
+        let (msg_text, next_phase) = match timer.phase {
+            TimerPhase::Work => (" Pomodoro completed! ", "break"),
+            TimerPhase::Break => (" Break finished! ", "work"),
+        };
+        let msg = Paragraph::new(vec![
+            Line::from(Span::styled(
+                msg_text,
+                Style::default()
+                    .fg(BG_DARK)
+                    .bg(if timer.phase == TimerPhase::Work {
+                        BREAK_COLOR
+                    } else {
+                        WORK_COLOR
+                    })
+                    .add_modifier(Modifier::BOLD),
+            )),
+            Line::from(""),
+            Line::from(vec![
+                Span::styled("Enter/Space", Style::default().fg(ACCENT)),
+                Span::raw(format!(" to start {}", next_phase)),
+            ]),
+        ])
+        .alignment(Alignment::Center);
+        frame.render_widget(msg, chunks[4]);
+    } else if app.show_completion_message {
         let msg = Paragraph::new(Span::styled(
             " Pomodoro completed! ",
             Style::default()
